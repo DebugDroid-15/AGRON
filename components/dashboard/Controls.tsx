@@ -1,11 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Droplet, Sun, Wind } from 'lucide-react';
 import { useDashboardStore } from '@/store/dashboard';
 
 export default function Controls() {
-  const { controls, toggleControl } = useDashboardStore();
+  const { controls, updateControlState } = useDashboardStore();
+  const [loading, setLoading] = useState<string | null>(null);
 
   const controlItems = [
     { id: 'pump', label: 'Water Pump', icon: <Droplet size={32} />, color: 'text-neon-blue' },
@@ -13,6 +14,16 @@ export default function Controls() {
     { id: 'fan1', label: 'Fan 1', icon: <Wind size={32} />, color: 'text-neon-blue' },
     { id: 'fan2', label: 'Fan 2', icon: <Wind size={32} />, color: 'text-neon-green' },
   ];
+
+  const handleToggle = async (controlId: string) => {
+    setLoading(controlId);
+    const control = controlId as keyof typeof controls;
+    const newValue = !controls[control];
+    
+    await updateControlState(control, newValue);
+    
+    setLoading(null);
+  };
 
   return (
     <div className="space-y-6">
@@ -23,6 +34,8 @@ export default function Controls() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {controlItems.map((item) => {
           const isActive = controls[item.id as keyof typeof controls];
+          const isLoading = loading === item.id;
+          
           return (
             <div
               key={item.id}
@@ -39,14 +52,17 @@ export default function Controls() {
               </div>
 
               <button
-                onClick={() => toggleControl(item.id as keyof typeof controls)}
+                onClick={() => handleToggle(item.id)}
+                disabled={isLoading}
                 className={`w-full py-3 rounded-lg font-semibold transition-all ${
-                  isActive
-                    ? 'bg-gradient-to-r from-neon-blue to-neon-green text-dark-bg shadow-neon-blue'
+                  isLoading
+                    ? 'opacity-50 cursor-not-allowed'
+                    : isActive
+                    ? 'bg-gradient-to-r from-neon-blue to-neon-green text-dark-bg shadow-neon-blue hover:shadow-lg'
                     : 'border-2 border-neon-blue text-neon-blue hover:bg-neon-blue hover:bg-opacity-10'
                 }`}
               >
-                {isActive ? 'Turn Off' : 'Turn On'}
+                {isLoading ? 'Updating...' : isActive ? 'Turn Off' : 'Turn On'}
               </button>
             </div>
           );

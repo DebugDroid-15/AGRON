@@ -311,74 +311,135 @@ The AGRON dashboard is designed to work with ESP32 microcontroller(s) deployed i
 
 ### ESP32 Code Example (Arduino Sketch)
 
+**✅ COMPLETE WORKING SKETCH AVAILABLE: [`ESP32_AGRON_SENSOR.ino`](./ESP32_AGRON_SENSOR.ino)**
+
+The repository includes a **production-ready Arduino sketch** with:
+- ✓ Full DHT22 temperature & humidity sensing
+- ✓ 4-channel soil moisture with VWC calculation
+- ✓ 2-channel light intensity monitoring
+- ✓ Automatic WiFi connection & reconnection
+- ✓ JSON API data transmission
+- ✓ Control command reception (pump/light/fan toggles)
+- ✓ Error handling & serial debugging
+- ✓ Sensor calibration values
+- ✓ Comprehensive documentation
+
+#### Quick Start:
+
+1. **Install Required Libraries** (Arduino IDE):
+   ```
+   Sketch → Include Library → Manage Libraries
+   Search and install:
+   - DHT sensor library by Adafruit
+   - ArduinoJson by Benoit Blanchon
+   ```
+
+2. **Edit Configuration** in `ESP32_AGRON_SENSOR.ino`:
+   ```cpp
+   const char* SSID = "YOUR_SSID";
+   const char* PASSWORD = "YOUR_PASSWORD";
+   const char* API_URL = "http://your-backend.com/api/sensor-data";
+   const char* DEVICE_ID = "ESP32_AGRON_01";
+   ```
+
+3. **Upload to ESP32**:
+   - Select Board: "ESP32 Dev Module"
+   - Set Baud Rate: 115200
+   - Connect USB and upload
+
+4. **Monitor Serial Output** (Ctrl+Shift+M):
+   ```
+   ========================================
+      AGRON ESP32 Sensor System v1.0.0
+   ========================================
+   
+   ✓ WiFi Connected Successfully!
+   ✓ Data sent to API. Response: 200
+   ```
+
+#### Pin Configuration:
+
+| Component | GPIO Pin | Type | Purpose |
+|-----------|----------|------|---------|
+| DHT22 | GPIO 4 | Digital | Temperature & Humidity |
+| Soil Moisture 1 | GPIO 32 | ADC | Soil 1 Reading |
+| Soil Moisture 2 | GPIO 33 | ADC | Soil 2 Reading |
+| Soil Moisture 3 | GPIO 34 | ADC | Soil 3 Reading |
+| Soil Moisture 4 | GPIO 35 | ADC | Soil 4 Reading |
+| Light Sensor 1 | GPIO 36 | ADC | Light 1 Reading |
+| Light Sensor 2 | GPIO 37 | ADC | Light 2 Reading |
+| Water Pump Relay | GPIO 12 | Digital | Pump ON/OFF |
+| Grow Light Relay | GPIO 13 | Digital | Light ON/OFF |
+| Fan 1 Relay | GPIO 14 | Digital | Fan 1 ON/OFF |
+| Fan 2 Relay | GPIO 15 | Digital | Fan 2 ON/OFF |
+| Status LED | GPIO 2 | Digital | WiFi Status Indicator |
+
+#### Sensor Calibration:
+
+Edit these values in the sketch based on your specific sensors:
 ```cpp
-#include <WiFi.h>
-#include <HTTPClient.h>
+const int SOIL_DRY = 4095;      // ADC in dry soil
+const int SOIL_WET = 2047;      // ADC in wet soil
+const float VWC_MAX = 60.0;     // Maximum VWC%
+```
 
-// WiFi credentials
-const char* ssid = "YOUR_SSID";
-const char* password = "YOUR_PASSWORD";
+#### Wiring Diagram:
 
-// API endpoint
-const char* apiEndpoint = "http://your-backend.com/api/sensor-data";
+```
+ESP32                  Sensors & Relays
+====================================
 
-// Sensor pins
-#define TEMP_HUMIDITY_PIN 4
-#define SOIL_MOISTURE_1 32
-#define SOIL_MOISTURE_2 33
-#define SOIL_MOISTURE_3 34
-#define SOIL_MOISTURE_4 35
-#define LIGHT_SENSOR_1 36
-#define LIGHT_SENSOR_2 37
-#define PUMP_RELAY 12
-#define LIGHT_RELAY 13
-#define FAN1_RELAY 14
-#define FAN2_RELAY 15
-
-void setup() {
-  Serial.begin(115200);
-  WiFi.begin(ssid, password);
+[ DHT22 ] ────────────────→ GPIO 4
   
-  // Configure relay pins as output
-  pinMode(PUMP_RELAY, OUTPUT);
-  pinMode(LIGHT_RELAY, OUTPUT);
-  pinMode(FAN1_RELAY, OUTPUT);
-  pinMode(FAN2_RELAY, OUTPUT);
-}
+[ Soil 1 ] ────────────────→ GPIO 32 (ADC)
+[ Soil 2 ] ────────────────→ GPIO 33 (ADC)
+[ Soil 3 ] ────────────────→ GPIO 34 (ADC)
+[ Soil 4 ] ────────────────→ GPIO 35 (ADC)
 
-void loop() {
-  if (WiFi.isConnected()) {
-    // Read sensors
-    float temperature = readTemperature();
-    float humidity = readHumidity();
-    int soil1 = analogRead(SOIL_MOISTURE_1);
-    int soil2 = analogRead(SOIL_MOISTURE_2);
-    int soil3 = analogRead(SOIL_MOISTURE_3);
-    int soil4 = analogRead(SOIL_MOISTURE_4);
-    int light1 = analogRead(LIGHT_SENSOR_1);
-    int light2 = analogRead(LIGHT_SENSOR_2);
-    
-    // Send data to backend
-    sendSensorData(temperature, humidity, soil1, soil2, soil3, soil4, light1, light2);
-  }
-  
-  delay(5000); // Update every 5 seconds
-}
+[ Light 1 ] ───────────────→ GPIO 36 (ADC)
+[ Light 2 ] ───────────────→ GPIO 37 (ADC)
 
-void sendSensorData(float temp, float hum, int s1, int s2, int s3, int s4, int l1, int l2) {
-  HTTPClient http;
-  http.begin(apiEndpoint);
-  
-  String payload = "{\"temperature\":" + String(temp) + 
-                   ",\"humidity\":" + String(hum) +
-                   ",\"soil_moisture\":[" + String(s1) + "," + String(s2) + "," + String(s3) + "," + String(s4) + "]" +
-                   ",\"light_intensity\":[" + String(l1) + "," + String(l2) + "]}";
-  
-  http.addHeader("Content-Type", "application/json");
-  int httpResponseCode = http.POST(payload);
-  http.end();
+Relay Module (VCC/GND from ESP32 5V/GND):
+[ IN1 ] ────────────────────→ GPIO 12
+[ IN2 ] ────────────────────→ GPIO 13
+[ IN3 ] ────────────────────→ GPIO 14
+[ IN4 ] ────────────────────→ GPIO 15
+
+Ground all sensors & relays to ESP32 GND
+Power sources: Sensors at 3.3V, Relays at 5V
+```
+
+#### Data Transmission Format:
+
+The sketch sends this JSON format to the backend:
+```json
+{
+  "device_id": "ESP32_AGRON_01",
+  "timestamp": 12345,
+  "temperature": 24.5,
+  "humidity": 65.3,
+  "soil_moisture": [
+    {"raw": 3000, "percentage": 50.2, "vwc": 30.1},
+    {"raw": 2950, "percentage": 52.1, "vwc": 31.3},
+    {"raw": 3100, "percentage": 45.8, "vwc": 27.5},
+    {"raw": 2850, "percentage": 55.5, "vwc": 33.3}
+  ],
+  "light_intensity": [1500, 1800],
+  "signal_strength": -65
 }
 ```
+
+#### Troubleshooting:
+
+| Issue | Solution |
+|-------|----------|
+| Upload fails | Select "ESP32 Dev Module" board, check USB drivers |
+| WiFi won't connect | Verify SSID/PASSWORD, check antenna, look at serial output |
+| Sensors read 0 | Check pin connections, verify power supply voltage |
+| API errors | Ensure backend URL is correct and server is running |
+| Wrong readings | Adjust calibration values (SOIL_DRY, SOIL_WET) |
+
+See `ESP32_AGRON_SENSOR.ino` header for complete documentation and debugging guide.
 
 ### Backend Setup (Next Steps)
 
