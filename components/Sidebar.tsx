@@ -11,6 +11,7 @@ import {
   Settings,
   ChevronRight,
 } from 'lucide-react';
+import { useDashboardStore } from '@/store/dashboard';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -35,6 +36,7 @@ export default function Sidebar({
   activeTab,
   onTabChange,
 }: SidebarProps) {
+  const { isConnected, lastDataReceived } = useDashboardStore();
   return (
     <>
       {/* Overlay for mobile */}
@@ -92,11 +94,24 @@ export default function Sidebar({
           <div className="space-y-3 text-sm">
             <div className="flex items-center justify-between">
               <span className="text-gray-400">System Status</span>
-              <span className="text-neon-green">Online</span>
+              <div className="flex items-center gap-2">
+                <div className={`w-2.5 h-2.5 rounded-full ${
+                  isConnected 
+                    ? 'bg-neon-green animate-pulse' 
+                    : 'bg-gray-500'
+                }`}></div>
+                <span className={isConnected ? 'text-neon-green font-semibold' : 'text-gray-400'}>
+                  {isConnected ? 'Connected' : 'Not Connected'}
+                </span>
+              </div>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-gray-400">Last Update</span>
-              <span className="text-neon-blue">Now</span>
+              <span className="text-neon-blue text-xs">
+                {isConnected && lastDataReceived 
+                  ? 'Just now'
+                  : 'Waiting...'}
+              </span>
             </div>
           </div>
         </div>

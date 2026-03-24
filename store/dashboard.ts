@@ -46,6 +46,7 @@ interface DashboardStore {
   isConnected: boolean;
   apiAvailable: boolean;
   deviceId: string;
+  lastDataReceived: number; // Timestamp of last successful data fetch
   setSensorData: (data: SensorData) => void;
   setControls: (controls: Partial<Controls>) => void;
   toggleControl: (control: keyof Controls) => void;
@@ -99,6 +100,7 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
   isConnected: false,
   apiAvailable: false,
   deviceId: 'ESP32_AGRON_01',
+  lastDataReceived: 0, // Unix timestamp
 
   setSensorData: (data) => set({ sensorData: data }),
 
@@ -138,11 +140,30 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
           lightIntensity: latestReading.light_intensity || defaultSensorData.lightIntensity,
         };
         
-        set({ sensorData, isConnected: true, apiAvailable: true });
+        // Update connection status - if we received real data, ESP32 is actively polling
+        const now = Date.now();
+        set({ 
+          sensorData, 
+          isConnected: true,  // Real data means ESP32 is connected and polling
+          apiAvailable: true, 
+          lastDataReceived: now
+        });
+      } else {
+        // No readings yet - waiting for first data from ESP32
+        set({ apiAvailable: false, isConnected: false });
       }
     } catch (error) {
       console.warn('📡 API unavailable. Waiting for real sensor data from ESP32...', error);
-      set({ apiAvailable: false, isConnected: false });
+      
+      // Check if we had recent data before - connection timeout after 15 seconds
+      const now = Date.now();
+      const timeSinceLastData = now - get().lastDataReceived;
+      const isStillConnected = timeSinceLastData < 15000; // 15 second timeout
+      
+      set({ 
+        apiAvailable: false, 
+        isConnected: isStillConnected  // Keep connected if data was recent
+      });
     }
   },
 
