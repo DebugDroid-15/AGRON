@@ -29,17 +29,17 @@ interface DashboardStore {
   updateControlState: (control: keyof Controls, value: boolean) => Promise<void>;
 }
 
-// Default mock data (fallback if API unavailable)
+// Empty initial state - will be filled by real API data
 const defaultSensorData: SensorData = {
-  temperature: 22,
-  humidity: 65,
-  soilMoisture: [2500, 2500, 2500, 2500],
-  lightIntensity: [1500, 1500],
+  temperature: 0,
+  humidity: 0,
+  soilMoisture: [0, 0, 0, 0],
+  lightIntensity: [0, 0],
 };
 
 const defaultControls: Controls = {
   pump: false,
-  growLight: true,
+  growLight: false,
   fan1: false,
   fan2: false,
 };
@@ -92,26 +92,8 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
         set({ sensorData, isConnected: true, apiAvailable: true });
       }
     } catch (error) {
-      console.warn('📡 API unavailable, using mock data:', error);
+      console.warn('📡 API unavailable. Waiting for real sensor data from ESP32...', error);
       set({ apiAvailable: false, isConnected: false });
-      
-      // Generate realistic mock data as fallback
-      set((state) => ({
-        sensorData: {
-          temperature: 18 + Math.random() * 12,
-          humidity: 40 + Math.random() * 40,
-          soilMoisture: [
-            1500 + Math.random() * 2000,
-            1500 + Math.random() * 2000,
-            1500 + Math.random() * 2000,
-            1500 + Math.random() * 2000,
-          ],
-          lightIntensity: [
-            500 + Math.random() * 2500,
-            600 + Math.random() * 2400,
-          ],
-        },
-      }));
     }
   },
 
