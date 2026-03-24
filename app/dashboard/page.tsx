@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import Overview from '@/components/dashboard/Overview';
@@ -13,28 +13,6 @@ import { useDashboardStore } from '@/store/dashboard';
 export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
-  const { sensorData, setSensorData } = useDashboardStore();
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setSensorData({
-        temperature: 18 + Math.random() * 12,
-        humidity: 40 + Math.random() * 40,
-        soilMoisture: [
-          1500 + Math.random() * 2000,
-          1500 + Math.random() * 2000,
-          1500 + Math.random() * 2000,
-          1500 + Math.random() * 2000,
-        ],
-        lightIntensity: [
-          500 + Math.random() * 2500,
-          600 + Math.random() * 2400,
-        ],
-      });
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [setSensorData]);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -80,9 +58,8 @@ export default function Dashboard() {
             <div className="flex flex-col items-end gap-1">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-neon-green rounded-full animate-pulse"></div>
-                <span className="text-sm text-gray-400">System Online</span>
+                <span className="text-sm text-gray-400">Real-time Data</span>
               </div>
-              <span className="text-xs text-gray-500">DUMMY DATA</span>
             </div>
           </div>
         </div>
