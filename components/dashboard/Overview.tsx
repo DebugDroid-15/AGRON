@@ -14,6 +14,18 @@ interface SoilMoistureParams {
 }
 
 function calculateSoilMoistureParams(rawValue: number): SoilMoistureParams {
+  // If rawValue is 0, return no data state (shows 0%)
+  if (rawValue === 0) {
+    return {
+      rawValue: 0,
+      percentage: 0,
+      vwc: 0,
+      status: 'No Data',
+      statusColor: 'text-gray-400',
+      irrigationNeeded: false,
+    };
+  }
+
   // Calibration range for soil moisture sensor (in mV)
   const DRY_VALUE = 4095;    // Analog reading in dry soil (~4095 mV)
   const WET_VALUE = 2047;    // Analog reading in wet soil (~2047 mV)
@@ -56,12 +68,15 @@ function calculateSoilMoistureParams(rawValue: number): SoilMoistureParams {
 }
 
 export default function Overview() {
-  const { sensorData, storageStats } = useDashboardStore();
+  const { sensorData, storageStats, isConnected } = useDashboardStore();
   
   // Calculate parameters for all soil moisture sensors
   const soilParams = sensorData.soilMoisture.map(value => calculateSoilMoistureParams(value));
   const avgSoilMoisture = Math.round((soilParams.reduce((sum, p) => sum + p.percentage, 0) / soilParams.length) * 10) / 10;
   const avgVWC = Math.round((soilParams.reduce((sum, p) => sum + p.vwc, 0) / soilParams.length) * 10) / 10;
+
+  // Calculate system health: 0 if not connected, otherwise 98 (could be dynamic later)
+  const systemHealth = isConnected ? 98 : 0;
 
   const metrics = [
     {
@@ -95,7 +110,7 @@ export default function Overview() {
     {
       icon: <Activity size={28} />,
       label: 'System Health',
-      value: '98',
+      value: systemHealth,
       unit: '%',
       color: 'text-neon-green',
     },
@@ -162,7 +177,9 @@ export default function Overview() {
             <div
               key={idx}
               className={`p-5 rounded-lg border transition-all ${
-                param.irrigationNeeded
+                param.status === 'No Data'
+                  ? 'border-gray-500 border-opacity-30 bg-gray-500 bg-opacity-5'
+                  : param.irrigationNeeded
                   ? 'border-orange-500 border-opacity-50 bg-orange-500 bg-opacity-5'
                   : 'border-neon-green border-opacity-30 bg-neon-green bg-opacity-5'
               }`}
