@@ -56,7 +56,7 @@ function calculateSoilMoistureParams(rawValue: number): SoilMoistureParams {
 }
 
 export default function Overview() {
-  const { sensorData } = useDashboardStore();
+  const { sensorData, storageStats } = useDashboardStore();
   
   // Calculate parameters for all soil moisture sensors
   const soilParams = sensorData.soilMoisture.map(value => calculateSoilMoistureParams(value));
@@ -223,7 +223,7 @@ export default function Overview() {
       {/* System Status */}
       <div className="p-8 rounded-xl border border-neon-blue border-opacity-20 bg-dark-bg bg-opacity-50 backdrop-blur-sm">
         <h3 className="text-lg font-semibold text-neon-blue mb-4">System Status</h3>
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-gray-400">Connection</span>
             <span className="text-neon-green">● Online</span>
@@ -232,9 +232,57 @@ export default function Overview() {
             <span className="text-gray-400">Data Sync</span>
             <span className="text-neon-green">● Active</span>
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-gray-400">Storage</span>
-            <span className="text-neon-blue">2.4 GB / 4 GB</span>
+          
+          {/* Storage Section with Live Stats */}
+          <div className="border-t border-neon-blue border-opacity-20 pt-4">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-gray-400">Database Storage</span>
+              <span className={`text-sm font-bold ${
+                storageStats.status === 'warning' ? 'text-yellow-400' :
+                storageStats.status === 'healthy' ? 'text-neon-green' : 'text-gray-400'
+              }`}>
+                {storageStats.used.mb > 1 
+                  ? `${(storageStats.used.mb).toFixed(2)} MB / ${storageStats.quota.mb} MB`
+                  : `${(storageStats.used.kb).toFixed(2)} KB / ${storageStats.quota.mb * 1024} KB`
+                }
+              </span>
+            </div>
+            
+            {/* Progress Bar */}
+            <div className="bg-dark-secondary rounded-full h-2 overflow-hidden mb-2">
+              <div
+                className={`h-full transition-all duration-500 ${
+                  storageStats.status === 'warning' 
+                    ? 'bg-gradient-to-r from-yellow-400 to-orange-400'
+                    : 'bg-gradient-to-r from-neon-green to-neon-blue'
+                }`}
+                style={{ width: `${Math.min(100, storageStats.usage.percent)}%` }}
+              ></div>
+            </div>
+            
+            {/* Storage Percentage */}
+            <div className="flex items-center justify-between text-xs text-gray-500">
+              <span>{storageStats.usage.percent.toFixed(1)}% used</span>
+              {storageStats.status === 'warning' && (
+                <span className="text-yellow-400 font-semibold">85%+ capacity</span>
+              )}
+            </div>
+
+            {/* Breakdown of storage by table */}
+            <div className="mt-3 pt-3 border-t border-neon-blue border-opacity-10 grid grid-cols-2 gap-2 text-xs">
+              <div className="text-gray-400">
+                📊 Readings: <span className="text-neon-blue font-mono">{storageStats.breakdown.readings}</span>
+              </div>
+              <div className="text-gray-400">
+                ⚙️ Controls: <span className="text-neon-green font-mono">{storageStats.breakdown.controls}</span>
+              </div>
+              <div className="text-gray-400">
+                🚨 Alerts: <span className="text-yellow-400 font-mono">{storageStats.breakdown.alerts}</span>
+              </div>
+              <div className="text-gray-400">
+                ⚡ Settings: <span className="text-neon-pink font-mono">{storageStats.breakdown.settings}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
