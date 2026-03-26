@@ -1,0 +1,66 @@
+REQUIRED ARDUINO LIBRARIES FOR AGRON ESP32
+
+Install these libraries via Arduino IDE:
+Tools → Manage Libraries → Search and Install
+
+1. DHT sensor library
+   - Author: Adafruit
+   - Version: 1.4.4 or later
+   - Description: Temperature & Humidity sensor reading
+   - Search keyword: DHT sensor library
+
+2. ArduinoJson
+   - Author: Benoit Blanchon
+   - Version: 6.21.0 or later
+   - Description: JSON serialization for API communication
+   - Search keyword: ArduinoJson
+
+3. ESP32 Board Support
+   - Author: Espressif Systems
+   - Version: 2.0.0 or later
+   - Already installed when adding ESP32 to Boards Manager
+   - Includes: WiFi.h, HTTPClient.h, EEPROM.h
+
+INSTALLATION STEPS:
+
+A. Add ESP32 Boards Manager URL:
+   1. File → Preferences
+   2. Additional Boards Manager URLs:
+      https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+   3. Click OK
+
+B. Install Board Support:
+   1. Tools → Board → Boards Manager
+   2. Search: esp32
+   3. Click "ESP32 by Espressif Systems"
+   4. Install version 2.0.0 or latest
+
+C. Install Libraries:
+   1. Tools → Manage Libraries
+   2. Search for "DHT sensor library"
+   3. Install by Adafruit
+   4. Search for "ArduinoJson"
+   5. Install by Benoit Blanchon
+
+D. Verify Installation:
+   - Tools → Board → Should see "esp32" section
+   - Sketch → Include Library → Should see DHT and ArduinoJson
+
+LIBRARY VERSIONS:
+- DHT sensor library: v1.4.4+
+- ArduinoJson: v6.21.0+ (6.20.x also works)
+- ESP32: v2.0.0+ (v3.0.0+ also compatible)
+
+NOTES:
+- All libraries are free and open-source
+- Installation takes ~2-3 minutes total
+- Sketch will auto-compile once all libraries installed
+- If compilation fails, verify all 3 libraries are correctly installed
+
+ALTERNATIVE: Command Line Installation
+(For Linux/Mac/PowerShell users)
+
+Arduino CLI commands:
+arduino-cli core install esp32:esp32
+arduino-cli lib install "DHT sensor library by Adafruit"
+arduino-cli lib install "ArduinoJson by Benoit Blanchon"
