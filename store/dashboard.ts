@@ -133,10 +133,16 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
         const latestReading = data.readings[0];
         
         // Transform API data to store format
+        // Handle both formats: simple numbers [4095, 4095] and objects [{raw: 4095}, ...]
+        const soilMoistureArray = latestReading.soil_moisture || defaultSensorData.soilMoisture;
+        const parsedSoilMoisture = soilMoistureArray.map((s: any) => {
+          return typeof s === 'object' && s !== null ? s.raw : s;
+        });
+
         const sensorData: SensorData = {
           temperature: latestReading.temperature || defaultSensorData.temperature,
           humidity: latestReading.humidity || defaultSensorData.humidity,
-          soilMoisture: latestReading.soil_moisture?.map((s: any) => s.raw) || defaultSensorData.soilMoisture,
+          soilMoisture: parsedSoilMoisture.length > 0 ? parsedSoilMoisture : defaultSensorData.soilMoisture,
           lightIntensity: latestReading.light_intensity || defaultSensorData.lightIntensity,
         };
         
