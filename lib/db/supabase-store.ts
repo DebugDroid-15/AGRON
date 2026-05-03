@@ -163,48 +163,21 @@ export async function getSensorHistory(deviceId: string, limit: number = 100) {
  */
 export async function updateControlState(deviceId: string, state: Omit<ControlState, 'device_id' | 'updated_at'>) {
   try {
-    // Try to update existing record, insert if not exists
-    const { data: existing, error: fetchError } = await supabase
+    const { data: result, error } = await supabase
       .from('device_controls')
-      .select('*')
-      .eq('device_id', deviceId)
-      .limit(1)
-      .single()
-
-    let result
-    let error
-
-    if (existing) {
-      // Update existing
-      const updateResponse = await supabase
-        .from('device_controls')
-        .update({
-          pump: state.pump,
-          growLight: state.growLight,
-          fan1: state.fan1,
-          fan2: state.fan2,
-        })
-        .eq('device_id', deviceId)
-        .select()
-
-      result = updateResponse.data
-      error = updateResponse.error
-    } else {
-      // Insert new
-      const insertResponse = await supabase
-        .from('device_controls')
-        .insert({
+      .upsert(
+        {
           device_id: deviceId,
           pump: state.pump,
           growLight: state.growLight,
           fan1: state.fan1,
           fan2: state.fan2,
-        })
-        .select()
-
-      result = insertResponse.data
-      error = insertResponse.error
-    }
+        },
+        {
+          onConflict: 'device_id',
+        }
+      )
+      .select()
 
     if (error) {
       console.error('Supabase control update error:', error)

@@ -61,10 +61,18 @@ Follow the prompts to link to your GitHub repository.
 
 ## Step 4: Environment Variables (if needed)
 
-If deploying to Vercel:
+If deploying to Vercel, you must add the Supabase variables used by the API routes:
+
 1. Go to your project settings on Vercel
 2. Navigate to "Environment Variables"
-3. Add any required environment variables (currently none needed for this project)
+3. Add these values for Production, Preview, and Development:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY`
+
+The values should match the ones in [\.env.local.example](.env.local.example) and your Supabase project settings.
+
+If the deployed site URL changes, update the ESP32 `backend_base_url` in [hardware/ESP32_Arduino/AGRON_ESP32_Main.ino](hardware/ESP32_Arduino/AGRON_ESP32_Main.ino) so it polls the same Vercel host.
 
 ## Step 5: Verify Deployment
 
@@ -91,7 +99,13 @@ git push origin main
 ### Build Fails on Vercel
 - Check build logs in Vercel dashboard
 - Ensure all dependencies are in `package.json`
-- Verify environment variables are set
+- Verify the Supabase environment variables are set
+
+### Controls Update But ESP32 Does Not Move
+- Confirm the Vercel deployment URL matches the ESP32 `backend_base_url`
+- Confirm `device_id` is the same in the dashboard and ESP32 sketch
+- Confirm the `device_controls` table exists in Supabase and contains the `pump`, `growLight`, `fan1`, and `fan2` columns
+- Check ESP32 Serial Monitor for `Control fetch failed` or `JSON Parse Error` messages
 
 ### Port Issues
 - Vercel automatically handles port configuration

@@ -31,8 +31,9 @@
 // ============================================================================
 const char* ssid = "YOUR_WIFI_SSID";           // ← Change this
 const char* password = "YOUR_WIFI_PASSWORD";   // ← Change this
-const char* api_url = "https://agron-tau.vercel.app/api/sensor-data";
-const char* control_url = "https://agron-tau.vercel.app/api/controls";
+const char* backend_base_url = "https://agron-tau.vercel.app"; // Change this if your app is deployed elsewhere
+String api_url = String(backend_base_url) + "/api/sensor-data";
+String control_url = String(backend_base_url) + "/api/controls";
 const char* device_id = "ESP32_AGRON_01";
 
 // ============================================================================
@@ -105,6 +106,8 @@ void setup() {
   Serial.println("║        AGRON IoT Smart Agriculture System              ║");
   Serial.println("║           ESP32 Sensor & Control Module                ║");
   Serial.println("╚════════════════════════════════════════════════════════╝");
+  Serial.print("[SETUP] Backend base URL: ");
+  Serial.println(backend_base_url);
   
   // Initialize DHT22 sensor
   Serial.println("[SETUP] Initializing DHT22 sensor...");
@@ -351,7 +354,10 @@ void fetchControlStateFromAPI() {
   }
   
   HTTPClient http;
-  String control_url_with_id = String(control_url) + "?device_id=" + device_id;
+  String control_url_with_id = control_url + "?device_id=" + device_id;
+
+  Serial.print("[API] 🔎 Fetching control state from: ");
+  Serial.println(control_url_with_id);
   
   http.begin(control_url_with_id);
   http.setConnectTimeout(5000);
@@ -403,6 +409,9 @@ void fetchControlStateFromAPI() {
       Serial.print("[API] ⚠️  JSON Parse Error: ");
       Serial.println(error.c_str());
     }
+  } else {
+    Serial.print("[API] ⚠️  Control fetch failed, HTTP status: ");
+    Serial.println(http_response_code);
   }
   
   http.end();
