@@ -47,6 +47,7 @@ interface DashboardStore {
   apiAvailable: boolean;
   deviceId: string;
   lastDataReceived: number; // Timestamp of last successful data fetch
+  lastSensorTimestamp: number;
   setSensorData: (data: SensorData) => void;
   setControls: (controls: Partial<Controls>) => void;
   toggleControl: (control: keyof Controls) => void;
@@ -101,6 +102,7 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
   apiAvailable: false,
   deviceId: 'ESP32_AGRON_01',
   lastDataReceived: 0, // Unix timestamp
+  lastSensorTimestamp: 0,
 
   setSensorData: (data) => set({ sensorData: data }),
 
@@ -131,6 +133,13 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
       if (data.readings && data.readings.length > 0) {
         // Get the latest reading from the API
         const latestReading = data.readings[0];
+        const latestTimestamp = Number(latestReading.timestamp || 0);
+        const currentState = get();
+
+        // Only update the store when Supabase has a newer reading.
+        if (latestTimestamp && latestTimestamp === currentState.lastSensorTimestamp) {
+          return;
+        }
         
         // Transform API data to store format
         // Handle both formats: simple numbers [4095, 4095] and objects [{raw: 4095}, ...]
@@ -152,11 +161,14 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
           sensorData, 
           isConnected: true,  // Real data means ESP32 is connected and polling
           apiAvailable: true, 
-          lastDataReceived: now
+          lastDataReceived: now,
+          lastSensorTimestamp: latestTimestamp || now,
         });
       } else {
         // No readings yet - waiting for first data from ESP32
-        set({ apiAvailable: false, isConnected: false });
+        if (get().lastSensorTimestamp === 0) {
+          set({ apiAvailable: false, isConnected: false });
+        }
       }
     } catch (error) {
       console.warn('📡 API unavailable. Waiting for real sensor data from ESP32...', error);
