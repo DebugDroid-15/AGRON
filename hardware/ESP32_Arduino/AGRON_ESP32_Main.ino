@@ -93,6 +93,19 @@ RelayState current_relay_state;
 bool wifi_connected = false;
 bool api_data_sent = false;
 
+void resetSensorData() {
+  current_data.temperature = 0.0;
+  current_data.humidity = 0.0;
+  current_data.soil_moisture[0] = 0;
+  current_data.soil_moisture[1] = 0;
+  current_data.soil_moisture[2] = 0;
+  current_data.soil_moisture[3] = 0;
+  current_data.light_intensity[0] = 0;
+  current_data.light_intensity[1] = 0;
+  current_data.signal_strength = 0;
+  current_data.timestamp = 0;
+}
+
 // ============================================================================
 // SETUP - Runs once on startup
 // ============================================================================
@@ -227,6 +240,9 @@ void connectToWiFi() {
 void readAllSensors() {
   Serial.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   Serial.println("[SENSORS] Reading all sensors...");
+
+  // Start from a clean slate so stale values are never reused.
+  resetSensorData();
   
   // Read DHT22 (Temperature & Humidity)
   float temp = dht.readTemperature();
@@ -234,8 +250,6 @@ void readAllSensors() {
   
   if (isnan(temp) || isnan(humidity)) {
     Serial.println("[DHT22] ✗ Failed to read DHT sensor!");
-    temp = current_data.temperature;
-    humidity = current_data.humidity;
   } else {
     current_data.temperature = temp;
     current_data.humidity = humidity;
@@ -249,7 +263,11 @@ void readAllSensors() {
   // Read Soil Moisture Sensors
   Serial.print("[SOIL] 🌾 Soil Moisture: ");
   for (int i = 0; i < 4; i++) {
-    current_data.soil_moisture[i] = analogRead(soil_moisture_pins[i]);
+    int raw_value = analogRead(soil_moisture_pins[i]);
+    if (raw_value < 0 || raw_value > 4095) {
+      raw_value = 0;
+    }
+    current_data.soil_moisture[i] = raw_value;
     Serial.print("S");
     Serial.print(i + 1);
     Serial.print("=");
@@ -261,7 +279,11 @@ void readAllSensors() {
   // Read Light Intensity Sensors
   Serial.print("[LIGHT] ☀️  Light Intensity: ");
   for (int i = 0; i < 2; i++) {
-    current_data.light_intensity[i] = analogRead(light_intensity_pins[i]);
+    int raw_value = analogRead(light_intensity_pins[i]);
+    if (raw_value < 0 || raw_value > 4095) {
+      raw_value = 0;
+    }
+    current_data.light_intensity[i] = raw_value;
     Serial.print("L");
     Serial.print(i + 1);
     Serial.print("=");
