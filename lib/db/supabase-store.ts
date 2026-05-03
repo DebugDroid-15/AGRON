@@ -216,6 +216,7 @@ export async function getControlState(deviceId: string): Promise<ControlState> {
         growLight: data.growLight || false,
         fan1: data.fan1 || false,
         fan2: data.fan2 || false,
+        updated_at: data.updated_at,
       }
     }
 
@@ -226,6 +227,7 @@ export async function getControlState(deviceId: string): Promise<ControlState> {
       growLight: false,
       fan1: false,
       fan2: false,
+      updated_at: undefined,
     }
   } catch (error) {
     console.error('Error fetching control state:', error)
@@ -236,6 +238,7 @@ export async function getControlState(deviceId: string): Promise<ControlState> {
       growLight: false,
       fan1: false,
       fan2: false,
+      updated_at: undefined,
     }
   }
 }

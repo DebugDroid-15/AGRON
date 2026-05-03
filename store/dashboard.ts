@@ -48,10 +48,12 @@ interface DashboardStore {
   deviceId: string;
   lastDataReceived: number; // Timestamp of last successful data fetch
   lastSensorTimestamp: number;
+  lastControlTimestamp: number;
   setSensorData: (data: SensorData) => void;
   setControls: (controls: Partial<Controls>) => void;
   toggleControl: (control: keyof Controls) => void;
   fetchSensorData: () => Promise<void>;
+  fetchControlState: () => Promise<void>;
   updateControlState: (control: keyof Controls, value: boolean) => Promise<void>;
   fetchStorageStats: () => Promise<void>;
 }
@@ -103,6 +105,7 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
   deviceId: 'ESP32_AGRON_01',
   lastDataReceived: 0, // Unix timestamp
   lastSensorTimestamp: 0,
+  lastControlTimestamp: 0,
 
   setSensorData: (data) => set({ sensorData: data }),
 
@@ -185,36 +188,72 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
     }
   },
 
+  // Fetch latest control state from API
+  fetchControlState: async () => {
+    try {
+      const deviceId = get().deviceId;
+      const response = await fetch(`/api/controls?device_id=${encodeURIComponent(deviceId)}`);
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const latestTimestamp = data.updated_at ? Date.parse(data.updated_at) : 0;
+      const currentState = get();
+
+      if (latestTimestamp && latestTimestamp === currentState.lastControlTimestamp) {
+        return;
+      }
+
+      set({
+        controls: {
+          pump: Boolean(data.pump),
+          growLight: Boolean(data.growLight),
+          fan1: Boolean(data.fan1),
+          fan2: Boolean(data.fan2),
+        },
+        lastControlTimestamp: latestTimestamp || Date.now(),
+      });
+    } catch (error) {
+      console.warn('⚠️ Failed to fetch control state:', error);
+    }
+  },
+
   // Update control state via API
   updateControlState: async (control: keyof Controls, value: boolean) => {
     try {
-      const currentControls = get().controls;
-      const updatedControls = { ...currentControls, [control]: value };
-      
-      // Optimistically update local state
-      set({ controls: updatedControls });
-      
       // Send to API
       const response = await fetch('/api/controls', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           device_id: get().deviceId,
-          ...updatedControls,
+          ...get().controls,
+          [control]: value,
         }),
       });
       
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
       }
+
+      const data = await response.json();
+      const latestTimestamp = data.updated_at ? Date.parse(data.updated_at) : Date.now();
+
+      set({
+        controls: {
+          pump: Boolean(data.pump),
+          growLight: Boolean(data.growLight),
+          fan1: Boolean(data.fan1),
+          fan2: Boolean(data.fan2),
+        },
+        lastControlTimestamp: latestTimestamp,
+      });
       
       console.log(`✅ Control updated: ${control} = ${value}`);
     } catch (error) {
       console.error('❌ Failed to update control:', error);
-      // Revert to previous state on error
-      set((state) => ({
-        controls: { ...state.controls, [control]: !get().controls[control] },
-      }));
     }
   },
 
@@ -242,11 +281,17 @@ if (typeof window !== 'undefined') {
   
   // Fetch data immediately
   store.getState().fetchSensorData();
+  store.getState().fetchControlState();
   store.getState().fetchStorageStats();
   
   // Set up polling (every 5 seconds for sensor data)
   setInterval(() => {
     store.getState().fetchSensorData();
+  }, 5000);
+
+  // Set up polling (every 5 seconds for control state)
+  setInterval(() => {
+    store.getState().fetchControlState();
   }, 5000);
   
   // Set up polling (every 30 seconds for storage stats)
