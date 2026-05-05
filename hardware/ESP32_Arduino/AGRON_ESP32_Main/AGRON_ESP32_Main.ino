@@ -29,8 +29,8 @@
 // ============================================================================
 // WIFI CONFIGURATION - UPDATE THESE WITH YOUR CREDENTIALS
 // ============================================================================
-const char* ssid = "YOUR_WIFI_SSID";           // ← Change this
-const char* password = "YOUR_WIFI_PASSWORD";   // ← Change this
+const char* ssid = "Manakusakuuuu";           // ← Change this
+const char* password = "123456789";   // ← Change this
 const char* backend_base_url = "https://agron-tau.vercel.app"; // Change this if your app is deployed elsewhere
 String api_url = String(backend_base_url) + "/api/sensor-data";
 String control_url = String(backend_base_url) + "/api/controls";
